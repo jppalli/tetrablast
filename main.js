@@ -266,22 +266,17 @@ class BlockBlaster extends Phaser.Scene {
 
         // Create particle emitter for combo effects
         // Create particle managers
-        const particleManager = this.add.particles('square');
+       const particles = this.add.particles('square');
 
         // Combo particles
-        this.comboParticles = particleManager.createEmitter({
-            scale: {
-                start: 0.5,
-                end: 0
-            },
-            speed: {
-                min: 50,
-                max: 150
-            },
-            lifespan: 1000,
-            blendMode: 'ADD',
-            on: false
-        });
+        this.comboParticles = particles.createEmitter({
+    scale: { start: 0.5, end: 0 },
+    speed: { min: 50, max: 150 },
+    lifespan: 1000,
+    blendMode: 'ADD',
+    on: false
+});
+
 
         // Confetti particles - improved configuration with more particles and effects
         this.confettiParticles = particleManager.createEmitter({
