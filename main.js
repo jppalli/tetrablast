@@ -279,7 +279,7 @@ class BlockBlaster extends Phaser.Scene {
 
 
         // Confetti particles - improved configuration with more particles and effects
-        this.confettiParticles = particleManager.createEmitter({
+        this.confettiParticles = particles.createEmitter({
             scale: {
                 start: 0.3, // Slightly larger particles
                 end: 0
