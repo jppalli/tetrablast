@@ -150,14 +150,14 @@ class BlockBlaster extends Phaser.Scene {
         this.load.audio('combo', 'https://play.rosebud.ai/assets/combo.wav?B7Ag');
         this.load.audio('stuck', 'https://play.rosebud.ai/assets/stuck.wav?qjFZ');
         this.load.audio('hooray', 'https://play.rosebud.ai/assets/Hooray-sound-effect.mp3?xOiq');
-        this.load.image('banner', 'https://play.rosebud.ai/assets/Banner. Video Game. Title: Tetra Blast!. Tetris pieces in the background..png?7cBX');
-        this.load.image('pixelBanner', 'https://play.rosebud.ai/assets/pixel cataclysm.jpg?ICw9');
-        this.load.image('match3', 'https://play.rosebud.ai/assets/match3.jpg?koCN');
-        this.load.image('tetris', 'https://play.rosebud.ai/assets/tetris.jpg?zgkp');
     }
 
     create() {
+        // Configure high-performance rendering
+        this.game.renderer.config.powerPreference = 'high-performance';
+        // Configure camera for high quality
         this.cameras.main.setBackgroundColor('#001F3F');
+        this.cameras.main.setRoundPixels(false);
 
         // Load play count from local storage
         const savedPlayCount = localStorage.getItem('blockBlasterPlayCount');
@@ -266,20 +266,25 @@ class BlockBlaster extends Phaser.Scene {
 
         // Create particle emitter for combo effects
         // Create particle managers
-       const particles = this.add.particles('square');
+        const particleManager = this.add.particles('square');
 
         // Combo particles
-        this.comboParticles = particles.createEmitter({
-    scale: { start: 0.5, end: 0 },
-    speed: { min: 50, max: 150 },
-    lifespan: 1000,
-    blendMode: 'ADD',
-    on: false
-});
-
+        this.comboParticles = particleManager.createEmitter({
+            scale: {
+                start: 0.5,
+                end: 0
+            },
+            speed: {
+                min: 50,
+                max: 150
+            },
+            lifespan: 1000,
+            blendMode: 'ADD',
+            on: false
+        });
 
         // Confetti particles - improved configuration with more particles and effects
-        this.confettiParticles = particles.createEmitter({
+        this.confettiParticles = particleManager.createEmitter({
             scale: {
                 start: 0.3, // Slightly larger particles
                 end: 0
@@ -584,165 +589,7 @@ class BlockBlaster extends Phaser.Scene {
                 volume: sound.volume
             });
         });
-        // Add banner at the bottom 10% of the screen
-        this.addBottomBanner();
-
         this.drawGame();
-    }
-
-    addBottomBanner() {
-        // Make sure banner doesn't interfere with the rest of the game
-        // Calculate banner dimensions - 10% of screen height
-        const bannerHeight = this.sys.game.config.height * 0.1;
-        const bannerWidth = this.sys.game.config.width;
-        const bannerY = this.sys.game.config.height - bannerHeight;
-
-        // Create game links with banner images
-        const gameLinks = [{
-            name: "Match 3",
-            url: "https://play.rosebud.ai/p/3441ab63-0725-4919-ae5d-552e3de613a6",
-            banner: 'match3'
-        }, {
-            name: "Pixel Cataclysm",
-            url: "https://play.rosebud.ai/p/61de61a0-df59-484a-8152-89488e6ed6a7",
-            banner: 'pixelBanner'
-        }, {
-            name: "Tetris",
-            url: "https://play.rosebud.ai/p/048153f5-8199-4264-a7ab-b9d269761890",
-            banner: 'tetris'
-        }];
-
-        // Create banner container to hold both banners
-        this.banners = [];
-
-        // Create each banner
-        for (let i = 0; i < gameLinks.length; i++) {
-            const game = gameLinks[i];
-
-            // Create the banner sprite
-            // Get banner image dimensions to maintain aspect ratio
-            const bannerImg = this.textures.get(game.banner).getSourceImage();
-            const originalWidth = bannerImg.width;
-            const originalHeight = bannerImg.height;
-
-            // Calculate the scale factor that maintains aspect ratio
-            let scale = Math.min(bannerWidth / originalWidth, bannerHeight / originalHeight);
-            let scaledWidth = originalWidth * scale;
-            let scaledHeight = originalHeight * scale;
-
-            // Center the banner horizontally
-            const bannerX = (this.sys.game.config.width - scaledWidth) / 2;
-
-            // Calculate sizes to fit banner and text side by side
-            const halfWidth = bannerWidth / 2;
-
-            // Adjust banner size to fit in left half
-            let bannerScaledWidth = Math.min(halfWidth - 10, scaledWidth);
-            let bannerScaledHeight = (bannerScaledWidth / scaledWidth) * scaledHeight;
-
-            // Position banner on the left side
-            const bannerLeftMargin = 10; // Left margin
-
-            // Create a container for the banner (image + text) with very low depth
-            const bannerContainer = this.add.container(0, 0).setDepth(5);
-
-            // Create the banner sprite
-            const banner = this.add.sprite(bannerLeftMargin, bannerY, game.banner)
-                .setOrigin(0, 0)
-                .setDisplaySize(bannerScaledWidth, bannerScaledHeight)
-                .setDepth(6);
-
-            // Create dark overlay that spans from the banner right edge to the right side of screen
-            const textAreaX = bannerLeftMargin + bannerScaledWidth;
-            const textAreaWidth = this.sys.game.config.width - textAreaX - 10; // Leave small margin on right
-            const overlay = this.add.graphics();
-            overlay.fillStyle(0x000000, 0.7); // More opaque for better text visibility
-            overlay.fillRect(textAreaX, bannerY, textAreaWidth, bannerHeight);
-            overlay.setDepth(6);
-
-            // Add text centered in the text area
-            const text = this.add.text(
-                textAreaX + (textAreaWidth / 2), // Center of text area
-                bannerY + (bannerHeight / 2),
-                `Play ${game.name} ►`, {
-                    fontSize: '20px',
-                    fontFamily: '"Exo 2", sans-serif',
-                    color: '#ffffff',
-                    stroke: '#000000',
-                    strokeThickness: 2,
-                    resolution: 2
-                }
-            ).setOrigin(0.5, 0.5).setDepth(7); // Centered horizontally and vertically
-
-            // Add all elements to the container
-            bannerContainer.add([banner, overlay, text]);
-
-            // Make only the exact banner and text area interactive, not entire screen width
-            const hitArea = new Phaser.Geom.Rectangle(
-                bannerLeftMargin,
-                bannerY,
-                bannerScaledWidth + textAreaWidth,
-                bannerHeight
-            );
-
-            // Simple interactivity with minimal collision detection
-            bannerContainer.setInteractive(hitArea, Phaser.Geom.Rectangle.Contains, {
-                useHandCursor: true
-            });
-
-            // Important: clear interaction zone to ensure it doesn't overlap with game pieces
-            bannerContainer.input.hitArea = hitArea;
-            bannerContainer.input.enabled = true;
-            bannerContainer.input.priorityID = 1; // Low priority
-
-            // Set up click handler for the entire container
-            bannerContainer.on('pointerdown', () => {
-                window.location.href = game.url;
-            });
-
-            // Store references
-            this.banners.push({
-                container: bannerContainer,
-                banner,
-                overlay,
-                text,
-                visible: i === 0 // Only show first banner initially
-            });
-
-            // Hide all except the first one
-            if (i !== 0) {
-                bannerContainer.setAlpha(0);
-            }
-        }
-        // Setup rotation timer
-        this.currentBannerIndex = 0;
-        this.time.addEvent({
-            delay: 5000,
-            callback: this.rotateBanners,
-            callbackScope: this,
-            loop: true
-        });
-    }
-
-    rotateBanners() {
-        // Fade out current banner
-        const currentBanner = this.banners[this.currentBannerIndex];
-        this.tweens.add({
-            targets: currentBanner.container,
-            alpha: 0,
-            duration: 300,
-            onComplete: () => {
-                // Update index
-                this.currentBannerIndex = (this.currentBannerIndex + 1) % this.banners.length;
-                // Fade in next banner
-                const nextBanner = this.banners[this.currentBannerIndex];
-                this.tweens.add({
-                    targets: nextBanner.container,
-                    alpha: 1,
-                    duration: 300
-                });
-            }
-        });
     }
 
     generateAvailableShapes(count) {
@@ -2457,19 +2304,6 @@ class BlockBlaster extends Phaser.Scene {
             this.add.existing(this.gameInteractionZone);
         }
 
-        // Re-add the banners to keep them visible after redraw
-        if (this.banners) {
-            for (const banner of this.banners) {
-                // Make sure banners are added to scene but don't block interactions
-                this.add.existing(banner.container);
-
-                // Ensure input handling is correctly set up after redraw
-                if (banner.container.input && banner.visible) {
-                    banner.container.input.enabled = true;
-                }
-            }
-        }
-
         // Always add the button elements, just rely on alpha for visibility
         this.add.existing(this.restartButtonGlow);
         this.add.existing(this.restartButtonBg);
@@ -2612,18 +2446,28 @@ class BlockBlaster extends Phaser.Scene {
 }
 const container = document.getElementById('renderDiv');
 const config = {
-    type: Phaser.AUTO,
+    type: Phaser.WEBGL,
     parent: 'renderDiv',
     pixelArt: false,
     scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH,
         width: 375,
-        height: 667
+        height: 667,
+        zoom: 1 / (window.devicePixelRatio || 1) // Adjust zoom based on device pixel ratio
     },
     scene: BlockBlaster,
-    antialias: true, // Enable antialiasing
-    resolution: window.devicePixelRatio || 1, // Use device's pixel ratio for higher resolution
+    antialias: true,
+    resolution: window.devicePixelRatio || 1,
+    roundPixels: false,
+    powerPreference: 'high-performance',
+    backgroundColor: '#001F3F',
+    render: {
+        clearBeforeRender: true,
+        desynchronized: true,
+        premultipliedAlpha: true,
+        preserveDrawingBuffer: true
+    }
 };
 
 window.phaserGame = new Phaser.Game(config);
